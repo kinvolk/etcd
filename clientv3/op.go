@@ -14,7 +14,7 @@
 
 package clientv3
 
-import pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
+import pb "go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
 
 type opType int
 
@@ -113,13 +113,13 @@ func (op Op) IsGet() bool { return op.t == tRange }
 func (op Op) IsDelete() bool { return op.t == tDeleteRange }
 
 // IsSerializable returns true if the serializable field is true.
-func (op Op) IsSerializable() bool { return op.serializable == true }
+func (op Op) IsSerializable() bool { return op.serializable }
 
 // IsKeysOnly returns whether keysOnly is set.
-func (op Op) IsKeysOnly() bool { return op.keysOnly == true }
+func (op Op) IsKeysOnly() bool { return op.keysOnly }
 
 // IsCountOnly returns whether countOnly is set.
-func (op Op) IsCountOnly() bool { return op.countOnly == true }
+func (op Op) IsCountOnly() bool { return op.countOnly }
 
 // MinModRev returns the operation's minimum modify revision.
 func (op Op) MinModRev() int64 { return op.minModRev }

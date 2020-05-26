@@ -9,11 +9,10 @@
         "editable": true,
         "gnetId": null,
         "hideControls": false,
-        "id": 6,
         "links": [
 
         ],
-        "refresh": false,
+        "refresh": "10s",
         "rows": [
             {
                 "collapse": false,
@@ -1220,6 +1219,7 @@
         },
         "timezone": "browser",
         "title": "etcd",
+        "uid": "c2f4e12cdf69feb95caa41a5a1b423d9",
         "version": 215
     }
 }

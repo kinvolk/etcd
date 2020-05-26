@@ -10,15 +10,15 @@ if ! [[ "$0" =~ scripts/genproto.sh ]]; then
 	exit 255
 fi
 
-if [[ $(protoc --version | cut -f2 -d' ') != "3.6.1" ]]; then
-	echo "could not find protoc 3.6.1, is it installed + in PATH?"
+if [[ $(protoc --version | cut -f2 -d' ') != "3.7.1" ]]; then
+	echo "could not find protoc 3.7.1, is it installed + in PATH?"
 	exit 255
 fi
 
 # directories containing protos to be built
-DIRS="./wal/walpb ./etcdserver/etcdserverpb ./etcdserver/api/snap/snappb ./raft/raftpb ./mvcc/mvccpb ./lease/leasepb ./auth/authpb ./etcdserver/api/v3lock/v3lockpb ./etcdserver/api/v3election/v3electionpb"
+DIRS="./wal/walpb ./etcdserver/etcdserverpb ./etcdserver/api/snap/snappb ./raft/raftpb ./mvcc/mvccpb ./lease/leasepb ./auth/authpb ./etcdserver/api/v3lock/v3lockpb ./etcdserver/api/v3election/v3electionpb ./etcdserver/api/membership/membershippb"
 
-# disable go mod
+# disable go mod - this is for the go get/install invocations
 export GO111MODULE=off
 
 # exact version of packages to build
@@ -38,7 +38,14 @@ SCHWAG_ROOT="${GOPATH}/src/github.com/hexfusion/schwag"
 GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
 GRPC_GATEWAY_ROOT="${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway"
 
-rm -f "${ETCD_ROOT}"
+function cleanup {
+  # Remove the whole fake GOPATH which can really confuse go mod.
+  rm -rf "${PWD}/gopath.proto"
+}
+
+cleanup
+trap cleanup EXIT
+
 mkdir -p "${ETCD_IO_ROOT}"
 ln -s "${PWD}" "${ETCD_ROOT}"
 
@@ -74,6 +81,8 @@ for dir in ${DIRS}; do
 		sed -i.bak -E 's/import _ \"go\.etcd\.io\/google\/api\"//g' ./*.pb.go
 		# shellcheck disable=SC1117
 		sed -i.bak -E 's/import _ \"google\.golang\.org\/genproto\/googleapis\/api\/annotations\"//g' ./*.pb.go
+		# shellcheck disable=SC1117
+		sed -i.bak -E "s/go.etcd.io\/etcd\//go.etcd.io\/etcd\/v3\//" ./*.pb.go
 		rm -f ./*.bak
 		goimports -w ./*.pb.go
 	popd
@@ -103,7 +112,9 @@ for pb in etcdserverpb/rpc api/v3lock/v3lockpb/v3lock api/v3election/v3electionp
 	sed -i.bak -E "s/New[A-Za-z]*Client/${pkg}.&/" ${gwfile}
 	# darwin doesn't like newlines in sed...
 	# shellcheck disable=SC1117
-	sed -i.bak -E "s|import \(|& \"go.etcd.io/etcd/${pkgpath}\"|" ${gwfile}
+	sed -i.bak -E "s|import \(|& \"go.etcd.io/etcd/v3/${pkgpath}\"|" ${gwfile}
+	# shellcheck disable=SC1117
+	sed -i.bak -E "s/go.etcd.io\etcd\//go.etcd.io\/etcd\/v3/" ${gwfile}
 	mkdir -p  "${pkgpath}"/gw/
 	go fmt ${gwfile}
 	mv ${gwfile} "${pkgpath}/gw/"

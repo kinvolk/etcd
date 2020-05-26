@@ -18,16 +18,10 @@ package v3rpc
 import (
 	"context"
 
-	"go.etcd.io/etcd/etcdserver"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/pkg/adt"
-
-	"github.com/coreos/pkg/capnslog"
-)
-
-var (
-	plog = capnslog.NewPackageLogger("go.etcd.io/etcd", "etcdserver/api/v3rpc")
+	"go.etcd.io/etcd/v3/etcdserver"
+	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
+	pb "go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
+	"go.etcd.io/etcd/v3/pkg/adt"
 )
 
 type kvServer struct {
@@ -179,7 +173,7 @@ func checkTxnRequest(r *pb.TxnRequest, maxTxnOps int) error {
 // there is an overlap, returns an error. If no overlap, return put and delete
 // sets for recursive evaluation.
 func checkIntervals(reqs []*pb.RequestOp) (map[string]struct{}, adt.IntervalTree, error) {
-	var dels adt.IntervalTree
+	dels := adt.NewIntervalTree()
 
 	// collect deletes from this level; build first to check lower level overlapped puts
 	for _, req := range reqs {

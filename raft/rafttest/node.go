@@ -17,11 +17,12 @@ package rafttest
 import (
 	"context"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 
-	"go.etcd.io/etcd/raft"
-	"go.etcd.io/etcd/raft/raftpb"
+	"go.etcd.io/etcd/v3/raft"
+	"go.etcd.io/etcd/v3/raft/raftpb"
 )
 
 type node struct {
@@ -79,9 +80,14 @@ func (n *node) start() {
 				}
 				n.storage.Append(rd.Entries)
 				time.Sleep(time.Millisecond)
-				// TODO: make send async, more like real world...
+
+				// simulate async send, more like real world...
 				for _, m := range rd.Messages {
-					n.iface.send(m)
+					mlocal := m
+					go func() {
+						time.Sleep(time.Duration(rand.Int63n(10)) * time.Millisecond)
+						n.iface.send(mlocal)
+					}()
 				}
 				n.Advance()
 			case m := <-n.iface.recv():

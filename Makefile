@@ -31,9 +31,7 @@ clean:
 	rm -rf ./release
 	rm -f ./snapshot/localhost:*
 	rm -f ./tools/etcd-dump-metrics/localhost:*
-	rm -f ./integration/127.0.0.1:* ./integration/localhost:*
-	rm -f ./clientv3/integration/127.0.0.1:* ./clientv3/integration/localhost:*
-	rm -f ./clientv3/ordering/127.0.0.1:* ./clientv3/ordering/localhost:*
+	find ./ -name "127.0.0.1:*" -o -name "localhost:*" -delete
 
 docker-clean:
 	docker images
@@ -51,7 +49,7 @@ docker-remove:
 
 
 
-GO_VERSION ?= 1.11.4
+GO_VERSION ?= 1.14.2
 ETCD_VERSION ?= $(shell git rev-parse --short HEAD || echo "GitNotFound")
 
 TEST_SUFFIX = $(shell date +%s | base64 | head -c 15)
@@ -65,11 +63,11 @@ endif
 
 
 # Example:
-#   GO_VERSION=1.10.7 make build-docker-test
+#   GO_VERSION=1.14.2 make build-docker-test
 #   make build-docker-test
 #
 #   gcloud docker -- login -u _json_key -p "$(cat /etc/gcp-key-etcd-development.json)" https://gcr.io
-#   GO_VERSION=1.10.7 make push-docker-test
+#   GO_VERSION=1.14.2 make push-docker-test
 #   make push-docker-test
 #
 #   gsutil -m acl ch -u allUsers:R -r gs://artifacts.etcd-development.appspot.com
@@ -79,6 +77,7 @@ build-docker-test:
 	$(info GO_VERSION: $(GO_VERSION))
 	@sed -i.bak 's|REPLACE_ME_GO_VERSION|$(GO_VERSION)|g' ./tests/Dockerfile
 	docker build \
+	  --network=host \
 	  --tag gcr.io/etcd-development/etcd-test:go$(GO_VERSION) \
 	  --file ./tests/Dockerfile .
 	@mv ./tests/Dockerfile.bak ./tests/Dockerfile
@@ -104,7 +103,7 @@ compile-with-docker-test:
 	  --rm \
 	  --mount type=bind,source=`pwd`,destination=/go/src/go.etcd.io/etcd \
 	  gcr.io/etcd-development/etcd-test:go$(GO_VERSION) \
-	  /bin/bash -c "GO_BUILD_FLAGS=-v ./build && ./bin/etcd --version"
+	  /bin/bash -c "GO_BUILD_FLAGS=-v GOOS=linux GOARCH=amd64 ./build && ./bin/etcd --version"
 
 compile-setup-gopath-with-docker-test:
 	$(info GO_VERSION: $(GO_VERSION))
@@ -112,7 +111,7 @@ compile-setup-gopath-with-docker-test:
 	  --rm \
 	  --mount type=bind,source=`pwd`,destination=/etcd \
 	  gcr.io/etcd-development/etcd-test:go$(GO_VERSION) \
-	  /bin/bash -c "cd /etcd && ETCD_SETUP_GOPATH=1 GO_BUILD_FLAGS=-v ./build && ./bin/etcd --version && rm -rf ./gopath"
+	  /bin/bash -c "cd /etcd && ETCD_SETUP_GOPATH=1 GO_BUILD_FLAGS=-v GOOS=linux GOARCH=amd64 ./build && ./bin/etcd --version && rm -rf ./gopath"
 
 
 
@@ -189,6 +188,7 @@ build-docker-release-master:
 	$(info ETCD_VERSION: $(ETCD_VERSION))
 	cp ./Dockerfile-release ./bin/Dockerfile-release
 	docker build \
+	  --network=host \
 	  --tag gcr.io/etcd-development/etcd:$(ETCD_VERSION) \
 	  --file ./bin/Dockerfile-release \
 	  ./bin
@@ -223,6 +223,7 @@ build-docker-static-ip-test:
 	$(info GO_VERSION: $(GO_VERSION))
 	@sed -i.bak 's|REPLACE_ME_GO_VERSION|$(GO_VERSION)|g' ./tests/docker-static-ip/Dockerfile
 	docker build \
+	  --network=host \
 	  --tag gcr.io/etcd-development/etcd-static-ip-test:go$(GO_VERSION) \
 	  --file ./tests/docker-static-ip/Dockerfile \
 	  ./tests/docker-static-ip
@@ -281,11 +282,13 @@ docker-static-ip-test-certs-metrics-proxy-run:
 #   make docker-dns-test-certs-wildcard-run
 #   make docker-dns-test-certs-common-name-auth-run
 #   make docker-dns-test-certs-common-name-multi-run
+#   make docker-dns-test-certs-san-dns-run
 
 build-docker-dns-test:
 	$(info GO_VERSION: $(GO_VERSION))
 	@sed -i.bak 's|REPLACE_ME_GO_VERSION|$(GO_VERSION)|g' ./tests/docker-dns/Dockerfile
 	docker build \
+	  --network=host \
 	  --tag gcr.io/etcd-development/etcd-dns-test:go$(GO_VERSION) \
 	  --file ./tests/docker-dns/Dockerfile \
 	  ./tests/docker-dns
@@ -389,6 +392,19 @@ docker-dns-test-certs-common-name-multi-run:
 	  gcr.io/etcd-development/etcd-dns-test:go$(GO_VERSION) \
 	  /bin/bash -c "cd /etcd && /certs-common-name-multi/run.sh && rm -rf m*.etcd"
 
+docker-dns-test-certs-san-dns-run:
+	$(info GO_VERSION: $(GO_VERSION))
+	$(info HOST_TMP_DIR: $(HOST_TMP_DIR))
+	$(info TMP_DIR_MOUNT_FLAG: $(TMP_DIR_MOUNT_FLAG))
+	docker run \
+	  --rm \
+	  --tty \
+	  --dns 127.0.0.1 \
+	  $(TMP_DIR_MOUNT_FLAG) \
+	  --mount type=bind,source=`pwd`/bin,destination=/etcd \
+	  --mount type=bind,source=`pwd`/tests/docker-dns/certs-san-dns,destination=/certs-san-dns \
+	  gcr.io/etcd-development/etcd-dns-test:go$(GO_VERSION) \
+	  /bin/bash -c "cd /etcd && /certs-san-dns/run.sh && rm -rf m*.etcd"
 
 
 # Example:
@@ -407,6 +423,7 @@ build-docker-dns-srv-test:
 	$(info GO_VERSION: $(GO_VERSION))
 	@sed -i.bak 's|REPLACE_ME_GO_VERSION|$(GO_VERSION)|g' ./tests/docker-dns-srv/Dockerfile
 	docker build \
+	  --network=host \
 	  --tag gcr.io/etcd-development/etcd-dns-srv-test:go$(GO_VERSION) \
 	  --file ./tests/docker-dns-srv/Dockerfile \
 	  ./tests/docker-dns-srv
@@ -490,6 +507,7 @@ build-docker-functional:
 	$(info ETCD_VERSION: $(ETCD_VERSION))
 	@sed -i.bak 's|REPLACE_ME_GO_VERSION|$(GO_VERSION)|g' ./functional/Dockerfile
 	docker build \
+	  --network=host \
 	  --tag gcr.io/etcd-development/etcd-functional:go$(GO_VERSION) \
 	  --file ./functional/Dockerfile \
 	  .

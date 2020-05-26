@@ -23,11 +23,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/etcdserver"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/functional/rpcpb"
-	"go.etcd.io/etcd/raft"
+	"go.etcd.io/etcd/v3/clientv3"
+	"go.etcd.io/etcd/v3/etcdserver"
+	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
+	"go.etcd.io/etcd/v3/functional/rpcpb"
+	"go.etcd.io/etcd/v3/raft"
 
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -174,9 +174,6 @@ func (s *keyStresser) isRetryableError(err error) bool {
 
 	// not retryable.
 	case context.Canceled.Error():
-		// from stresser.Cancel method:
-		return false
-	case grpc.ErrClientConnClosing.Error():
 		// from stresser.Cancel method:
 		return false
 	}

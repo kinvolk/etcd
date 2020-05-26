@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	pb "go.etcd.io/etcd/etcdserver/etcdserverpb"
-	"go.etcd.io/etcd/mvcc/mvccpb"
-	"go.etcd.io/etcd/pkg/testutil"
+	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
+	pb "go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
+	"go.etcd.io/etcd/v3/mvcc/mvccpb"
+	"go.etcd.io/etcd/v3/pkg/testutil"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -230,7 +230,11 @@ func TestV3LeaseCheckpoint(t *testing.T) {
 	var ttl int64 = 300
 	leaseInterval := 2 * time.Second
 	defer testutil.AfterTest(t)
-	clus := NewClusterV3(t, &ClusterConfig{Size: 3, LeaseCheckpointInterval: leaseInterval})
+	clus := NewClusterV3(t, &ClusterConfig{
+		Size:                    3,
+		EnableLeaseCheckpoint:   true,
+		LeaseCheckpointInterval: leaseInterval,
+	})
 	defer clus.Terminate(t)
 
 	// create lease
@@ -623,7 +627,7 @@ func TestV3LeaseRequireLeader(t *testing.T) {
 		defer close(donec)
 		resp, err := lac.Recv()
 		if err == nil {
-			t.Fatalf("got response %+v, expected error", resp)
+			t.Errorf("got response %+v, expected error", resp)
 		}
 		if rpctypes.ErrorDesc(err) != rpctypes.ErrNoLeader.Error() {
 			t.Errorf("err = %v, want %v", err, rpctypes.ErrNoLeader)

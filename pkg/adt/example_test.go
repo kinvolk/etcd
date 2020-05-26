@@ -17,12 +17,11 @@ package adt_test
 import (
 	"fmt"
 
-	"go.etcd.io/etcd/pkg/adt"
+	"go.etcd.io/etcd/v3/pkg/adt"
 )
 
 func Example() {
-	ivt := &adt.IntervalTree{}
-
+	ivt := adt.NewIntervalTree()
 	ivt.Insert(adt.NewInt64Interval(1, 3), 123)
 	ivt.Insert(adt.NewInt64Interval(9, 13), 456)
 	ivt.Insert(adt.NewInt64Interval(7, 20), 789)

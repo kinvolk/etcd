@@ -14,7 +14,7 @@
 
 /*
 This file contains tests which verify that the scenarios described
-in the raft paper (https://ramcloud.stanford.edu/raft.pdf) are
+in the raft paper (https://raft.github.io/raft.pdf) are
 handled by the raft implementation correctly. Each test focuses on
 several sentences written in the paper. This could help us to prevent
 most implementation bugs.
@@ -32,7 +32,7 @@ import (
 	"sort"
 	"testing"
 
-	pb "go.etcd.io/etcd/raft/raftpb"
+	pb "go.etcd.io/etcd/v3/raft/raftpb"
 )
 
 func TestFollowerUpdateTermFromMessage(t *testing.T) {
@@ -169,7 +169,7 @@ func testNonleaderStartElection(t *testing.T, state StateType) {
 	if r.state != StateCandidate {
 		t.Errorf("state = %s, want %s", r.state, StateCandidate)
 	}
-	if !r.votes[r.id] {
+	if !r.prs.Votes[r.id] {
 		t.Errorf("vote for self = false, want true")
 	}
 	msgs := r.readMessages()

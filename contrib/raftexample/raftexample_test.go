@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/raft/raftpb"
+	"go.etcd.io/etcd/v3/raft/raftpb"
 )
 
 type cluster struct {
@@ -117,7 +117,7 @@ func TestProposeOnCommit(t *testing.T) {
 				case pC <- *s:
 					continue
 				case err := <-eC:
-					t.Fatalf("eC message (%v)", err)
+					t.Errorf("eC message (%v)", err)
 				}
 			}
 			donec <- struct{}{}

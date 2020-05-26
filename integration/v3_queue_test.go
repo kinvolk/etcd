@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"go.etcd.io/etcd/contrib/recipes"
+	"go.etcd.io/etcd/v3/contrib/recipes"
 )
 
 const (
@@ -42,7 +42,7 @@ func TestQueueOneReaderOneWriter(t *testing.T) {
 		q := recipe.NewQueue(etcdc, "testq")
 		for i := 0; i < 5; i++ {
 			if err := q.Enqueue(fmt.Sprintf("%d", i)); err != nil {
-				t.Fatalf("error enqueuing (%v)", err)
+				t.Errorf("error enqueuing (%v)", err)
 			}
 		}
 	}()
